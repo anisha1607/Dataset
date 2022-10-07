@@ -1,0 +1,65 @@
+#Topic: Retrieving the data and preprocessing it
+#Author of Dataset: Anthoniraj
+#Author of code : Anisha
+# Date : 8 September
+#Description: To pre process the data set given
+
+#Loading the required libraries
+library(base)
+library(utils)
+library(stats)
+
+#Retrieving the data set and putting it in a dataframe 
+df <- read.csv("https://raw.githubusercontent.com/anthoniraj/datasets/main/data_cleaning/tweet.csv")
+
+#To read first few lines
+head(df,n=5L)
+
+#To find columns having NAs
+summary(df)
+
+#We see X, X.1, X.2 have NA values 
+
+#Removing NA Columns
+print("Removing NA columns")
+drop <- c("X","X.1","X.2");
+df <- df[, !(names(df) %in% drop)]
+head(df)
+
+#Convert retweet column into numeric format
+df$retweetCount <- as.numeric(df$retweetCount)
+#For those entries with no tweet, replacing them with 0
+summary(df)
+df$retweetCount[is.na(df$retweetCount)] <- 0
+
+print("After conversion:")
+summary(df)
+dim(df)
+
+#Filter the subset with retweet count > 1000
+df <- df[df$retweetCount>1000, ]
+
+#Convert Created column into Date and Time column
+df$Created <- strptime( df$created, format="%d-%m-%Y %H:%M")
+head(df)
+
+#Retrieve rows containing @username in text column
+df <- df[grepl("@",df$text), ]
+head(df$text)
+
+#Extract @username from text column
+extract <- function(str){
+  s <- strsplit(str," ")
+  lapply(str, function(str) str [grepl("@[[:alnum:]]",str)])
+}
+
+df$username <- c(extract(df$text))
+
+#Extracting text from HTML script from statusSource column 
+df$statusSource <- gsub("<[^>]+>","", df$statusSource)
+#Rebuilding the data frame
+df$statusSource
+
+#To view the document
+head(df)
+View(df)
