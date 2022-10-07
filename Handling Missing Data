@@ -1,0 +1,135 @@
+#Author: Anisha Gupta
+#Dataset: Life Expectancy Dataset (WHO)
+#Description: To handle missing data in the dataset
+#Date: 29 September 2021
+
+#Loading the required libraries
+library(base)   # for reading the csv file
+library(utils)  # for getting structure of dataframe
+library(stats)  # for statistical functions
+library(naniar)  # for understanding missing data
+library(imputeMissings) #to impute missing values
+library(VIM)    # to perform KNN
+library(data.table)  #to add contents of 1 dataframe into another
+
+#Retrieving the data set and putting it in a dataframe 
+df <- read.csv("https://raw.githubusercontent.com/anisha1607/Dataset/main/LifeExpectancyData.csv")
+
+head(df)
+
+#To check number of rows and columns
+dim(df)
+
+#To find columns having NAs
+summary(df)
+str(df)
+
+#As we can see, all columns have correct data type
+
+#To visualize missing data
+vis_miss(df)
+
+#Numerical Summary for missing data
+miss_var_summary(df)
+
+#Sum of missing values
+colSums(is.na(df))
+
+# Remove columns with more than 60% NA
+df <- df[, which(colMeans(!is.na(df)) > 0.6)]
+summary(df)
+
+
+# Remove rows with more than 60% NA
+df <- df[which(rowMeans(!is.na(df)) > 0.6), ]
+
+#To check number of rows and columns after removal
+dim(df)
+
+summary(df)
+
+#To use in part 4
+df1 <- copy(df)
+
+#Task 3: Mean or Median Imputation
+
+#Mean or median imputation consists of replacing all occurrences of missing values(NA)
+#within a variable with the mean or median of that variable.
+
+#If the variable follows a normal distribution, the mean and median are approximately the same. 
+#If the variable has a skewed distribution, then the median is a better representation.
+
+#To test normality values for the numeric columns of the data set:
+#Shapiro-Wilk’s method is widely recommended for normality test. 
+#It is based on the correlation between the data and the corresponding normal scores.
+
+do.call(rbind, lapply(df[4:15], function(x) shapiro.test(x)[c("statistic", "p.value")]))
+
+#From the output, the p-value < 0.05 implies that the distribution of the data is skewed. 
+#In other words, we can assume the data significantly deviates from a normal distribution.
+
+#Hence, for my data set, I will use median
+
+for(i in 4:ncol(df)){
+  df[ , i][is.na(df[ ,i])] <- median(df[ ,i], na.rm =TRUE)
+}
+
+#Now we see that no NA values remain. Task successful.
+miss_var_summary(df)
+
+View(df)
+
+#Task 4: Standard algorithm for imputing missing values
+
+#Correlation is checked to see dependency of the columns
+res <- cor(df1[4:15])
+round(res, 2)
+
+#Reason
+
+#As we can see, all numeric columns are univariate i.e. not dependent on others. So, here, we will use kNN algorithm.
+#Since this data set consists of data which involves independent columns,
+#we require an imputation method that accounts for observation of only that particular column values for 
+#filling the missing values. Hence, kNN (k- Nearest Neighbour) is the best choice, according to me.
+
+#kNN algorithm is much more accurate than the method of imputation by using mean or median.
+
+#Moreover, Since the values are not gradually increasing in the data set, k nearest neighbour might be the correct choice.
+#That is why I've used this technique.
+
+#kNN algorithm:
+
+#KNN is an algorithm that is useful for matching a point with its closest k neighbors in a multi-dimensional space. 
+#It is particularly useful for dealing with all kind of missing data(continuous, discrete, ordinal and categorical).
+#This algorithm makes use of ‘feature similarity’ to predict the values of any new data points.
+#The assumption behind using KNN for missing values is that a point value can be approximated 
+#by the values of the points that are closest to it, based on other variables.
+
+summary(df1)
+
+#Imputing missing data with KNN Algorithm
+dfa <- kNN(df1, variable = c("Life.expectancy", "Adult.Mortality", "Alcohol", "Hepatitis.B","BMI","Polio","Total.expenditure","Diphtheria","GDP","Income.composition.of.resources","Schooling"))
+head(dfa)
+
+#By default,the value of k is 5.
+#To view the summary of the data.
+summary(dfa)
+
+#This algorithm produces a few extra columns which are logical in nature(TRUE/FALSE)
+#and are used for filling the missing values.
+
+#We should remove those extra columns as they are not required in the data set
+dfa <- dfa[1:15]
+summary(dfa)
+head(dfa)
+
+#So, this is how we have imputed the missing values for numerical variables using the kNN algorithm
+
+#To view if missing data is left
+miss_var_summary(dfa)
+#Visual representation
+vis_miss(dfa)
+
+#To view the data
+head(dfa)
+View(dfa)
