@@ -1,0 +1,153 @@
+#Name: Anisha Gupta
+#Dataset: Employee Salary Dataset
+#Description:Performing encoding,applying statistical functions, perform modelling,plotting of data and performance analysis
+
+#Importing required libraries
+library(base)
+library(stats)
+library(utils)
+library(graphics)
+library(dplyr)
+library(rpart)
+library(rpart.plot)
+library(e1071)
+library(imputeMissings)
+
+#Reading the csv file
+df <- read.csv("https://raw.githubusercontent.com/anthoniraj/pds_lab_fat/main/employee_info.csv?token=AAHLUWQV3YSZOXSI4OYRHG3BW3X6Q") 
+head(df)
+
+#Description of dataset
+summary(df)
+#Correct data types are there for each set
+
+str(df)
+names(df)
+
+#Since all columns have proper names, no need to change them
+
+#As we can see through summary, no missing data
+
+#Encoding
+#To perform label encoding- for gender and tshirt column
+df$gender = factor(df$gender, levels= c('Male','Female'),labels=c(1,2))
+df$tshirt = factor(df$tshirt, levels= c('purchased','not purchased'),labels=c(0,1))
+head(df)
+
+summary(df)
+
+#Converting both the above to numeric
+df$shirt <- as.numeric(df$tshirt)
+df$gender <- as.numeric(df$gender)
+
+#Statistical Functions
+#Performing on salary column
+#Mean
+print("Mean")
+print(mean(df$salary))
+
+#Median
+print("Median")
+print(median(df$salary))
+
+#Mode
+print("Mode")
+print(which.max(tabulate(df$salary)))
+
+#IQR Range
+print("IQR")
+print(IQR(df$salary))
+
+#Standard deviation
+print("Standard Deviation")
+print(sd(df$salary))
+
+#Summary of salary column
+print(summary(df$salary))
+
+#Performing Regression Model
+
+#Setting a seed value so that same rows are divided into test and train
+set.seed(123)
+
+#Splitting the dataset into training and testing
+#80% for training set
+#20% for test set
+split <- sample(1:nrow(df),0.8*nrow(df))
+train_df<-df[split,]
+test_df<-df[-split,]
+
+#Model 1: Decision Tree Regression
+
+#Variable salary is dependent and gender and age are independent
+model_dtr <- rpart(salary ~ gender+age, data = train_df, method="anova")
+pred_dtr <- predict(model_dtr,test_df)
+
+print("Predicted from Decision Tree Regression")
+print(pred_dtr)
+
+#Model 2: Multivariate Linear Regression
+
+#Variable salary is dependent and gender and age are independent
+model_mlr <- lm(salary ~ gender+age, data = train_df)
+pred_mlr <- predict(model_mlr,test_df)
+
+print("Predicted from Linear Regression")
+print(pred_mlr)
+
+print(length(pred_mlr))
+print(length(test_df$salary))
+
+#Model Evaluation
+#To check which model performs better
+
+#Using Root Mean Squared Error,Mean Absolute Error, R-squared and coefficient of determination
+print("For Decision Tree Regression")
+
+diff_dtr <- pred_dtr - test_df$salary
+mse_dtr <- mean((diff_dtr)^2)
+mae_dtr<- mean(abs(diff_dtr))
+rmse_dtr<- sqrt(mse_dtr)
+dtr_r2<- 1- (sum(diff_dtr)^2/sum((test_df$salary)- mean(test_df$salary))^2)
+print("Mean Squared Error")
+print(mse_dtr)
+print("Mean Absolute Error")
+print(mae_dtr)
+print("Root Mean Squared Error")
+print(rmse_dtr)
+print("R-Squared Error")
+print(dtr_r2)
+
+#Using Root Mean Squared Error,Mean Squared Error, Mean Absolute Error and coefficient of determination
+print("For Multivariate Linear Regression")
+
+diff_mlr <- pred_mlr - test_df$salary
+mse_mlr <- mean((diff_mlr)^2)
+mae_mlr<- mean(abs(diff_mlr))
+rmse_mlr<- sqrt(mse_mlr)
+mlr_r2<- 1- (sum(diff_mlr)^2/sum((test_df$salary)- mean(test_df$salary))^2)
+print("Mean Squared Error")
+print(mse_mlr)
+print("Mean Absolute Error")
+print(mae_mlr)
+print("Root Mean Squared Error")
+print(rmse_mlr)
+print("R-Squared Error")
+print(mlr_r2)
+
+#Visualization of the model
+#Comparing each prediction output with actual value
+
+#Plotting the Multivariate Linear Regression
+x= 1:length(test_df$salary)
+plot(x,test_df$salary,pch=19,col="blue", main="Multivariate Linear Regression")
+lines(x, pred_mlr,col="red")
+text(pred_dtr, use.n=TRUE, cex=0.8)
+
+#Plotting the Decision Tree Regression
+plot(x,test_df$salary,pch=19,col="blue", main="Decision Tree Regression")
+lines(x, pred_dtr,col="red")
+text(pred_dtr, use.n=TRUE, cex=0.8)
+
+#With the help performance measure and visualization, I can infer that Decision Tree Regression is better
+#As Root Mean Squared Error, Mean Squared Error, Mean Absolute Error is higher value for Multivariate Linear Regression.
