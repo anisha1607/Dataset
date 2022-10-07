@@ -1,0 +1,244 @@
+#Author: Anisha Gupta
+#Registration Number: 19BDS0058
+#Dataset: Indians Diabetes Database
+#Description: To perform statistical analysis on the dataset
+#Date: 6th October 2021
+
+#Loading the required libraries
+library(base)   # for reading the csv file
+library(utils)  # for getting structure of dataframe
+library(stats)  # for statistical functions
+library(modeest) # to find mode of the data
+library(graphics) # for visualizing the data
+library(naniar) # for understanding missing data
+library(dplyr) # for filtering the data
+
+#Retrieving the data set and putting it in a dataframe 
+df <- read.csv("https://raw.githubusercontent.com/anisha1607/Dataset/main/diabetes.csv")
+
+head(df)
+
+#Analyzing the dataset
+summary(df)
+dim(df)
+
+#Age is one of the factors that can be checked for diabetes.
+#So, i will choose that column to perform statistical analysis.
+
+#Converting Date frame column into atomic vector
+age <- df$Age
+
+#To check the column data
+class(age)
+
+#To check for missing data
+sum(is.na(age))
+
+#Mean
+mean_data <- function(age){
+  sum = 0
+  i=0
+  for (x in age) {
+    sum <- sum+x
+    i <- i+1
+  }
+  sum
+  avg<-sum/i
+  avg
+}
+
+print("Mean:")
+print(mean_data(age))
+
+#To verify mean
+mean(age)
+
+#Median
+median_data <- function(age){
+  # use of sort function to sort vector
+  # by default it is sorted in increasing order
+  age<-sort(age)
+  n <- length(age)
+  #print(n)
+  if(n%%2==0){
+    med <- age[length(age)/2 + 1]
+  }
+  else{
+    med <- age[length(age)/2] + age[length(age)/2 + 1] %/% 2
+  }
+  med
+}
+
+print("Median:")
+print(median_data(age))
+
+#To verify median
+median(age)
+
+#Mode
+mode_data <- function(age){
+  t <- unique(age)
+  t[which.max(tabulate(match(age, t)))]
+}
+
+print("Mode:")
+print(mode_data(age))
+
+#To verify mode
+mfv(age)
+
+#IQR
+iqr_data <- function(age){
+  age <- sort(age)
+  n <- length(age)
+  
+  if(n%%2==0){
+    low = age[1:(n/2)]
+    high = age[(n/2)+1:n]
+  }
+  else{
+    low = age[1:(n/2)]
+    high = age[(n/2)+1:n+1]
+  }  
+  
+  q1 <- median_data(low)
+  q3 <- median_data(high)
+  iqr <- q3-q1
+  iqr
+}
+
+print("IQR")
+print(iqr_data(age))
+
+#To verify IQR
+IQR(age)
+
+#Standard Deviation
+sd_data <- function(age){
+  sum = 0
+  i=0
+  m = mean_data(age)
+  for (x in age) {
+    sum <- sum + ((x-m)**2)
+    i <- i+1
+  }
+  sd <- (sum/(i-1))**0.5
+  sd
+}
+
+print("Standard Deviation")
+print(sd_data(age))
+
+#To verify Standard Deviation
+sd(age)
+
+#Probability values on Empirical Rule
+#68% of the data will occur within one standard deviation of the mean.
+#95% of the data will occur within two standard deviations of the mean
+#99.7% of the data will occur within three standard deviations of the mean
+
+m <- mean_data(age)
+sd <- sd_data(age)
+
+# For finding 68% of the data
+print("68% of data lies in the range")
+print(paste(m-sd,m+sd))
+
+# For finding 95% of the data
+print("95% of data lies in the range")
+print(paste(m-(sd*2),m+(sd*2)))
+
+# For finding 99.7% of the data
+print("99.7% of data lies in the range")
+print(paste(m-(sd*3),m+(sd*3)))
+
+#Plotting the Histogram
+hist(age)
+
+#Numeric Histogram Frequencies using table function
+table(age)
+
+#Plotting the Normal Distribution
+hist(age, probability = T)
+curve(dnorm(x, mean=mean(age), sd=sd(age)), add=T)
+
+# Comparison plot
+c1 <- c(mean(age),median(age),mfv(age),sd(age),IQR(age))
+c2 <- c(mean_data(age),median_data(age),mode_data(age),sd_data(age),iqr_data(age))
+
+plot(c1,type = "o", col = "pink", xlab = "Measures", ylab = "Values", main = "Comparison of Measures")
+lines(c2, type = "o", col = "blue")
+
+#As the lines are overlapping, we can conclude that the values- user defined and predefined are the same.
+
+#Hypothetical Testing
+
+#Using same dataset as above
+#Dataset: Indians Diabetes Database
+
+head(df)
+
+#Analyzing the dataset
+summary(df)
+dim(df)
+
+#Numerical Summary for missing data
+miss_var_summary(df)
+
+#As we can see, pregnancies and glucose columns have no missing values
+#So, they can be used as it is to get accurate results
+
+#T test
+#It is a statistical test that is used to compare the means of two groups
+
+# To check if number of pregnancies have an effect on glucose level
+
+#Since mean number of pregnancies are around 4, we wll check for effect on glucose level more than or less than 4 pregancies
+
+#Null Hypothesis
+#Ho:  There is no significance difference in the glucose level of women with pregnancies greater than or equal to 4 and less than 4
+
+#Alternate Hypothesis
+#Ha: There is a significance difference in the glucose level of women with pregnancies greater than or equal to 4 and less than 4
+
+#Segregating male and female data
+dfg <- filter(df,Pregnancies>=4 )
+dfl <- filter(df,Pregnancies<4 )
+
+head(dfg)
+head(dfl)
+
+#Since the groups come from two different columns, perform two-sample t-test
+
+#T-test 2 sample
+
+result = t.test(dfg$Glucose, dfl$Glucose, var.equal = T)
+result
+
+#Significance level = 1- confidence level =0.05
+
+p=result[3]
+alpha= 0.05
+
+# If the P-value is less than (or equal to significance level), reject the null hypothesis in favor of the alternative hypothesis. 
+#If the P-value is greater than significance level, do not reject the null hypothesis.
+
+#To print result
+print("P value")
+print(p)
+
+print("level of significance")
+print(alpha)
+
+print("result")
+if(p<=alpha){
+  print("Reject the null hypothesis in favor of the alternative hypothesis")
+  print("There is a significance difference in the glucose level of women with pregnancies greater than or equal to 4 and less than 4")
+}else{
+  print("Do not reject the null hypothesis")
+  print("There is no significance difference in the glucose level of women with pregnancies greater than or equal to 4 and less than 4")
+}
+
+# Since P value is less than Significance level, there is a significant difference in the glucose level of women with pregnancies greater 
+# than or equal to 4 and less than 4
+# Here we reject null hypothesis
