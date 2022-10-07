@@ -1,0 +1,51 @@
+# The aim of this assignment is to understand the various data sources and retrieve the 
+# data from them, through web scraping or by using an API. I have collected data using API call
+# on news articles from the website “newsapi.org”  on 2 of the most trending topics in the world: 
+# terrorism in Afghanistan and Corona virus. Data has been collected from 18th Aug 2021 to 29th Aug 2021
+# and saved in a CSV file for further pre-processing and data-modelling.
+
+
+
+library(jsonlite)
+library(httr)
+library(stringr)
+#Website: Newsapi.org
+#API Call URI: https://newsapi.org/v2/everything?q={query}&from={date}&to={date}&sortBy=popularity&page={page_no}&appid={API_key}
+#Query: News on Coronavirus and terrorism in Afghanistan - The most trending topics
+
+api="################################"
+
+#To set dates to test data daily
+date1="2021-08-28"
+date2="2021-08-29"
+
+#To check the JSON file and look for the meaningful data required
+data<- fromJSON("https://newsapi.org/v2/everything?q=coronavirus&from=2021-08-22&to=2021-08-22&sortBy=publishedAt&apiKey=0169fb486a1f4282a041bea0c2004c5e")
+data
+(toJSON(data$articles,pretty=T))
+
+#To look for desired query from results page 1 to 5 as each returns 20 data values
+for(query in c("coronavirus","afghanistan"))
+for(page in c(1:5)){
+  news_df <- data.frame(matrix(ncol = 8, nrow = 0))
+  url <- paste0("https://newsapi.org/v2/everything?q=",query,"&from=",date1,"&to=",date2,"&sortBy=popularity&page=",page,"&apiKey=",api)
+  print(url)
+  data2 <- fromJSON(url)
+  
+  #to skip data whose description is in form of HTML
+  if(str_detect(data2$article$description,"<")&&str_detect(data2$article$description,">"))
+    next
+
+  #To rename columns and display only the ones we want to
+  new.row <- data.frame("Source" = data2$articles$source,
+                        "Author" = data2$articles$author,
+                        "Title" = data2$articles$title,
+                        "Section" = query,
+                        "Description" = e,
+                        "URL" = data2$articles$url,
+                        "Date" = data2$articles$publishedAt)
+  news_df <- rbind(news_df, new.row)
+
+  #To write the data on csv file
+  write.table(news_df,file="news2.csv", sep=",", append=TRUE, row.names=FALSE, col.names= !file.exists("news2.csv"))
+}
